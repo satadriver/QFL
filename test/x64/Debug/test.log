@@ -1,0 +1,12 @@
+﻿  test.cpp
+D:\vsProject\QFL\test\test.cpp(98,31): warning C4311: “类型强制转换”: 从“PVOID”到“DWORD”的指针截断
+D:\vsProject\QFL\test\test.cpp(98,31): warning C4302: “类型强制转换”: 从“PVOID”到“DWORD”截断
+D:\vsProject\QFL\test\test.cpp(141,86): warning C4311: “类型强制转换”: 从“PVOID”到“DWORD”的指针截断
+D:\vsProject\QFL\test\test.cpp(141,86): warning C4302: “类型强制转换”: 从“PVOID”到“DWORD”截断
+D:\vsProject\QFL\test\test.cpp(141,90): warning C4312: “类型强制转换”: 从“DWORD”转换到更大的“PVOID”
+D:\vsProject\QFL\test\test.cpp(171,10): warning C4477: “printf”: 格式字符串“%x”需要类型“unsigned int”的参数，但可变参数 1 拥有了类型“DWORD64”
+D:\vsProject\QFL\test\test.cpp(171,10): message : 请考虑在格式字符串中使用“%llx”
+D:\vsProject\QFL\test\test.cpp(171,10): message : 请考虑在格式字符串中使用“%Ix”
+D:\vsProject\QFL\test\test.cpp(171,10): message : 请考虑在格式字符串中使用“%I64x”
+D:\vsProject\QFL\test\test.cpp(171,10): warning C4477: “printf”: 格式字符串“%p”需要类型“void *”的参数，但可变参数 2 拥有了类型“DWORD64”
+  test.vcxproj -> D:\vsProject\QFL\x64\Debug\test.exe
