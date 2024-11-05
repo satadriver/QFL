@@ -110,8 +110,7 @@ int Debug::ProcessDataRange(HANDLE hp, int pid, LPVOID dataAddr, LPVOID codeAddr
 	do
 	{
 		if (node) 
-		{
-			
+		{	
 			if ( (pid == node->pid)  && (node->bid.base <= dataAddr && node->bid.top > dataAddr) ) 
 			{
 				int size = (char*)node->bid.top - (char*)node->bid.base;
@@ -300,7 +299,7 @@ int Debug::DebugProcess(DEBUG_EVENT * debug) {
 						ret = m_breakPoint->RestoreProcBreakPoint(hp, debug->dwProcessId,
 							debug->dwThreadId, addr, HOOK_NETWORK_RETURN, (LPVOID)recvLen);
 						if (ret == HOOK_NETWORK_RETURN) {
-							//SetReceiveBP();
+							SetReceiveBP();
 						}
 					}
 				}
