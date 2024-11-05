@@ -14,7 +14,7 @@ typedef int (*ptrfunction)(int p1, int p2, int p3, int p4, int p5, int p6, int p
 
 int ExecFunction(char* szfunc);
 
-int GetProcess(const char* pn);
+string GetProcess(int pid);
 
 int IsProc64Bit(HANDLE h);
 
@@ -39,3 +39,11 @@ int GetAddressBoundary(LPVOID addr, SIZE_T size, LPVOID* start, LPVOID* end);
 int ProcMemProtect(HANDLE hp, LPVOID addr, SIZE_T size, int v);
 
 string GetNameFromPid(int pid);
+
+int IsFileOrPid(char* str);
+
+int GetCallChain(HANDLE hp, LPVOID* rebp);
+
+LPVOID GetFuncStart(char* data);
+
+string RemovePath(string path);

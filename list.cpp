@@ -50,7 +50,7 @@ MyListEntry* MyListClass::Search(int offset,char * data,int size) {
 	do
 	{
 		if (n == 0) {
-			return 0;
+			break;
 		}
 		char* obj = (char*)((char*)n + offset);
 		if (memcmp(data, obj,size) == 0) {
@@ -128,35 +128,34 @@ int MyListClass::Remove(MyListEntry* list) {
 	}
 
 	if (list == m_list->next) {
-		MyListEntry* n = m_list->next->next;
+		
 		MyListEntry* p = m_list->prev;
-		if (p == n) {
+		if (p == list) {
 			m_list->next = 0;
 			m_list->prev = 0;
 		}
 		else {
-			m_list->next = n;
+			MyListEntry* n = m_list->next->next;
 			n->prev = p;
 			p->next = n;
+			m_list->next = n;
 		}
-		delete list;
-		
+		delete list;		
 		return TRUE;
 	}
 	else if (list == m_list->prev) {
-		MyListEntry* n = m_list->next;
-		MyListEntry* p = m_list->prev->prev;
-		if (p == n) {
+		MyListEntry* n = m_list->next;	
+		if (list == n) {
 			m_list->next = 0;
 			m_list->prev = 0;
 		}
 		else {
-			m_list->prev = p;
+			MyListEntry* p = m_list->prev->prev;		
 			n->prev = p;
 			p->next = n;
+			m_list->prev = p;
 		}
 		delete list;
-
 		return TRUE;
 	}
 
@@ -170,10 +169,10 @@ int MyListClass::Remove(MyListEntry* list) {
 			prev->next = next;
 			next->prev = prev;
 			delete list;
-			break;
+			return TRUE;
 		}
 		n = n->next;
 	} while (n != b);
 
-	return TRUE;
+	return FALSE;
 }

@@ -53,7 +53,7 @@ int MyListClass::InsertHead(MyListEntry* list) {
 		m_list->next = list;
 		m_list->prev = list;
 		list->prev = list;
-		list->prev = list;
+		list->next = list;
 		return 0;
 	}
 
@@ -77,7 +77,7 @@ int MyListClass::InsertEnd(MyListEntry* list) {
 		m_list->next = list;
 		m_list->prev = list;
 		list->prev = list;
-		list->prev = list;
+		list->next = list;
 		return 0;
 	}
 

@@ -1,6 +1,4 @@
-﻿  main.cpp
-  test.cpp
-D:\vsProject\QFL\target\test.cpp(175,29): warning C4305: “参数”: 从“int”到“u_short”截断
-D:\vsProject\QFL\target\test.cpp(175,22): warning C4309: “参数”: 截断常量值
-  正在生成代码...
+﻿  test.cpp
+D:\vsProject\QFL\target\test.cpp(176,29): warning C4305: “参数”: 从“int”到“u_short”截断
+D:\vsProject\QFL\target\test.cpp(176,22): warning C4309: “参数”: 截断常量值
   target.vcxproj -> D:\vsProject\QFL\Debug\target.exe

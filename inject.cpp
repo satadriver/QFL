@@ -8,26 +8,26 @@
 #pragma comment(lib, "ntdll")
 
 typedef NTSTATUS (__stdcall *ptrNtCreateSection)(
-	          PHANDLE            SectionHandle,
-	           ACCESS_MASK        DesiredAccess,
-	 char * ObjectAttributes,
-	 PLARGE_INTEGER     MaximumSize,
-	           ULONG              SectionPageProtection,
-	           ULONG              AllocationAttributes,
-	 HANDLE             FileHandle
+PHANDLE            SectionHandle,
+ACCESS_MASK        DesiredAccess,
+char * ObjectAttributes,
+PLARGE_INTEGER     MaximumSize,
+ULONG              SectionPageProtection,
+ULONG              AllocationAttributes,
+HANDLE             FileHandle
 );
 
 typedef  NTSTATUS (__stdcall * ptrNtMapViewOfSection)(
-	                HANDLE          SectionHandle,
-	                HANDLE          ProcessHandle,
-	           PVOID* BaseAddress,
-	                ULONG_PTR       ZeroBits,
-	                SIZE_T          CommitSize,
-	PLARGE_INTEGER  SectionOffset,
-	           PSIZE_T         ViewSize,
-	                char* InheritDisposition,
-	                ULONG           AllocationType,
-	                ULONG           Win32Protect
+HANDLE          SectionHandle,
+HANDLE          ProcessHandle,
+PVOID* BaseAddress,
+ULONG_PTR       ZeroBits,
+SIZE_T          CommitSize,
+PLARGE_INTEGER  SectionOffset,
+PSIZE_T         ViewSize,
+char* InheritDisposition,
+ULONG           AllocationType,
+ULONG           Win32Protect
 );
 
 typedef NTSTATUS(NTAPI* ptrRtlCreateUserThread)(IN HANDLE ProcessHandle,

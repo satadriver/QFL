@@ -15,7 +15,7 @@ typedef struct _MyListEntry {
 
 class MyListClass {
 public:
-	MyListEntry* m_list;
+	MyListEntry* m_list=0;
 
 	int m_keyOffset;
 	int m_keySize;

@@ -4,6 +4,7 @@
 #include "utils.h"
 #include "debug.h"
 #include "main.h"
+#include "network.h"
 
 int fuzzEntry(int pid) {
 	int ret = 0;
@@ -18,18 +19,11 @@ int fuzzEntry(int pid) {
 int main(int argc, char** argv) {
 	int ret = 0;
 
-	//LPVOID addr = GetProcAddress(LoadLibraryA("ws2_32.dll"), "recv");
-	//DWORD oldprotect = 0;
-	//LPVOID address = GetAlignAddress(addr);
-	//ret = VirtualProtectEx(GetCurrentProcess(), (LPVOID)address, 0X1000, PAGE_EXECUTE_READWRITE, &oldprotect);
-	//*(int*)address = 0;
-
-	//WinExec("D:\\vsProject\\QFL\\Debug\\target.exe",SW_SHOW);
-	//Sleep(3000);
-	//int pid = GetProcess("target.exe");
-	//Debug* debug = new Debug("", pid,0);
-	//ret = Debug::DebugThreadProc(debug);
-	//return 0;
+	Network* network = new Network(IPPROTO_TCP, "", 54321);
+	HANDLE ht = CreateThread(0, 0, (LPTHREAD_START_ROUTINE)network->TcpServer, network, 0, 0);
+	if (ht) {
+		CloseHandle(ht);
+	}
 
 	if (argc <= 1) {
 		return 0;
@@ -41,10 +35,18 @@ int main(int argc, char** argv) {
 			ret = RemoteInject(atoi(strpid));
 		}
 		else if (lstrcmpiA(argv[i], "--dp") == 0) {
-			char* strpid = argv[i + 1];
-			int pid = atoi(strpid);
-			Debug * debug = new Debug(0,(LPVOID)pid);
-			ret = Debug::DebugThreadProc(debug);
+			char* str = argv[i + 1];
+			int isPid = IsFileOrPid(str);
+			if (isPid ) {
+				int pid = atoi(str);
+				Debug* debug = new Debug(0, (LPVOID)pid);
+				ret = Debug::DebugThreadProc(debug);
+			}
+			else {
+				int pid = GetProcess(str);
+				Debug* debug = new Debug(0, (LPVOID)pid);
+				ret = Debug::DebugThreadProc(debug);
+			}
 		}
 		else if (lstrcmpiA(argv[i], "--df") == 0) {
 			char* fn = argv[i + 1];

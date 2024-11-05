@@ -13,11 +13,11 @@
 BreakPoint::BreakPoint(int offset, int size) {
 
 	m_bpList = new MyListClass();
+
 	m_bpList->m_keyOffset = offset;
 	m_bpList->m_keySize = size;
 
 	m_addrList = new MyListClass();
-
 }
 
 BreakPoint::~BreakPoint() {
@@ -31,12 +31,14 @@ int BreakPoint::insertAddr(BufferNode* node) {
 	if (m_addrList == 0) {
 		m_addrList = new MyListClass();
 	}
-	BufferNode* n = searchAddr((char*)&node->bid.base,sizeof(BufferIdentifier));
+	BufferNode* n = searchAddr((char*)node->buf,node->size);
 	if (n == 0) {
 		ret = m_addrList->InsertHead(&node->list);
 	}
 	return ret;
 }
+
+
 BufferNode* BreakPoint::bufHeader() {
 
 	return (BufferNode *) m_addrList->m_list->next;
@@ -49,7 +51,7 @@ int BreakPoint::removeAddr(MyListEntry* list) {
 	return m_addrList->Remove(list);
 }
 
-BufferNode* BreakPoint::searchAddr(char* data, int size) {
+BufferNode* BreakPoint::searchAddr(char* data, SIZE_T size) {
 	if (m_addrList == 0) {
 		return FALSE;
 	}
@@ -63,14 +65,17 @@ BufferNode* BreakPoint::searchAddr(char* data, int size) {
 	do
 	{
 		if (n == 0) {
-			return 0;
+			break;
 		}
 
-		if (n->buf <= data && data < (char*)n->buf + n->size) {
+		if ( (n->buf <= data) && (data + size <= (char*)n->buf + n->size) ) {
 			return n;
 		}
-		else if (n->bid.base <= data && data < (char*)n->bid.top ) {
-			return n;
+		else {
+			if ( (n->bid.base <= data) && (data + size <= (char*)n->bid.top) )
+			{
+				return n;
+			}
 		}
 		
 		n = (BufferNode*)(n->list.next);
@@ -128,16 +133,20 @@ int BreakPoint::SetProcBreakPoint(HANDLE hp,int pid,LPVOID addr, int cmd, LPVOID
 	if (hp) {
 		DWORD oldprotect = 0;
 		LPVOID address = GetAlignAddress(addr);
-		ret = VirtualProtectEx(hp, (LPVOID)address, 0X1000, PAGE_EXECUTE_READWRITE, &oldprotect);
+		SYSTEM_INFO si = { 0 };
+		GetNativeSystemInfo(&si);
+		ret = VirtualProtectEx(hp, (LPVOID)address, si.dwPageSize, PAGE_EXECUTE_READWRITE, &oldprotect);
 
-		unsigned char data[64] = { 0 };
+		unsigned char data[16] = { 0 };
 		SIZE_T cnt = 0;
 		ret = ReadProcessMemory(hp, addr, data, 16, &cnt);
-		//__log("%s before %p:%x\r\n", __FUNCTION__, addr, data[0]);
+		if (data[0] == 0xcc) {
+			return 0;
+		}
 
 		BreakPointNode* node = new BreakPointNode();
-		node->code = *(char*)data;
-		node->id.addr = (unsigned char*)addr;
+		node->code = data[0];
+		node->id.addr = addr;
 		node->id.pid = pid;
 		node->cmd = cmd;
 		node->param = param;
@@ -147,8 +156,9 @@ int BreakPoint::SetProcBreakPoint(HANDLE hp,int pid,LPVOID addr, int cmd, LPVOID
 		ret = WriteProcessMemory(hp, addr, data, 1, &cnt);
 
 		ret = ReadProcessMemory(hp, addr, data, 1, &cnt);
-
-		//__log("%s after %p:%x\r\n", __FUNCTION__, addr, data[0]);
+		if (data[0] != 0xcc) {
+			__log("%s WriteProcessMemory %p:%x\r\n", __FUNCTION__, addr, data[0]);
+		}
 	}
 	else {
 		__log("%s process handle:%x\r\n", __FUNCTION__, hp);
@@ -175,6 +185,37 @@ int BreakPoint::RestoreProcBreakPoint(HANDLE hp,int pid, int tid, LPVOID addr,in
 	int ret = 0;
 	HANDLE ht = OpenThread(THREAD_ALL_ACCESS, 0, tid);		//ReEntry function!
 	if (ht) {
+		int offset = offsetof(BreakPointNode, id);
+		BPIdentifier id;
+		id.addr = addr;
+		id.pid = pid;
+		BreakPointNode* node = (BreakPointNode*)search(offset, (char*)&id, sizeof(BPIdentifier));
+		if (node == 0) {
+			__log("Can not find break point address:%p, pid:%d\r\n", addr,pid);
+			return 0;
+		}
+
+		DWORD oldprotect = 0;
+		LPVOID address = GetAlignAddress(addr);
+		SYSTEM_INFO si = { 0 };
+		GetNativeSystemInfo(&si);
+		ret = VirtualProtectEx(hp, (LPVOID)address, si.dwPageSize, PAGE_EXECUTE_READWRITE, &oldprotect);
+
+		unsigned char data[16] = { 0 };
+		SIZE_T cnt = 0;
+		ret = ReadProcessMemory(hp, addr, data, 1, &cnt);
+		if (data[0] != 0xcc) {
+			__log("%s break point: %p loss int3 code:%x\r\n", __FUNCTION__, addr, data[0]);
+			return 0;
+		}
+		
+		ret = WriteProcessMemory(hp, addr, &node->code, 1, &cnt);
+
+		ret = ReadProcessMemory(hp, addr, data, 1, &cnt);
+		if (data[0] == 0xcc) {
+			__log("%s WriteProcessMemory %p:%x\r\n", __FUNCTION__, addr, data[0]);
+		}
+
 		CONTEXT context;
 		context.ContextFlags = CONTEXT_FULL | CONTEXT_DEBUG_REGISTERS;
 		ret = GetThreadContext(ht, &context);
@@ -186,53 +227,30 @@ int BreakPoint::RestoreProcBreakPoint(HANDLE hp,int pid, int tid, LPVOID addr,in
 		ret = SetThreadContext(ht, &context);
 		CloseHandle(ht);
 
-		int offset = offsetof(BreakPointNode, id);
-		BPIdentifier id;
-		id.addr = addr;
-		id.pid = pid;
-		BreakPointNode* node = (BreakPointNode*)search(offset, (char*)&id, sizeof(BPIdentifier));
-		if (node == 0) {
-			__log("search error\r\n");
-			return 0;
-		}
+		if (cmd == HOOK_NETWORK_RETURN) {
 
-		DWORD oldprotect = 0;
-		LPVOID address = GetAlignAddress(addr);
-		ret = VirtualProtectEx(hp, (LPVOID)address, 0X1000, PAGE_EXECUTE_READWRITE, &oldprotect);
-
-		unsigned char data[16] = { 0 };
-		SIZE_T cnt = 0;
-		ret = ReadProcessMemory(hp, addr, data, 1, &cnt);
-		//__log("%s before %p:%x\r\n", __FUNCTION__, addr, data[0]);
-
-		ret = WriteProcessMemory(hp, addr, &node->code, 1, &cnt);
-
-		ret = ReadProcessMemory(hp, addr, data, 1, &cnt);
-		//__log("%s aftre %p:%x\r\n", __FUNCTION__, addr, data[0]);
-
-		if (node->cmd == HOOK_NETWORK_BUF || cmd == HOOK_NETWORK_RETURN) {
-
-			BufferNode* info = (BufferNode*)node->param;
-			
-			if (node->cmd == HOOK_NETWORK_BUF) {
-				
+			BufferNode* info = (BufferNode*)node->param;	
+			if (info == 0) {
+				__log("%s info:%u\r\n", __FUNCTION__, info);
 			}
-			else if (cmd == HOOK_NETWORK_RETURN) {
-				info->recvSize = (int)param;
+			else {
+				if (node->cmd == HOOK_NETWORK_BUF) {
+					ret = HOOK_NETWORK_BUF;
+				}
+				else if (node->cmd == HOOK_NETWORK_RETURN) {
+					info->recvSize = (SIZE_T)param;
+					ret = HOOK_NETWORK_RETURN;
+				}
+				SIZE_T size = (char*)info->bid.top - (char*)info->bid.base;
+				int res = ProcMemProtect(hp, (LPVOID)info->bid.base, size, PAGE_NOACCESS);
+				//int res = ProcMemProtect(hp, info->buf, (SIZE_T)info->size, PAGE_NOACCESS);
 			}
-			ret = ProcMemProtect(hp, (LPVOID)info->buf, info->size, PAGE_NOACCESS);	
 		}
 		else {
 			//
 		}	
-
-		if (node->param) {
-			//delete node->param;
-		}
 		
-		remove(&(node->list));
-		//delete node;
-		
+		remove(&(node->list));	
 	}
 	else {
 		__log("%s error:%u\r\n", __FUNCTION__, GetLastError());
@@ -255,8 +273,8 @@ int BreakPoint::SetBreakPoint(LPVOID addr) {
 	int ret = 0;
 
 	DWORD oldprotect = 0;
-	LPVOID address = GetAlignAddress(addr);
-	ret = VirtualProtect((LPVOID)address, 1, PAGE_EXECUTE_READWRITE, &oldprotect);
+	//LPVOID address = GetAlignAddress(addr);
+	ret = VirtualProtect((LPVOID)addr, 1, PAGE_EXECUTE_READWRITE, &oldprotect);
 	BreakPointNode* node = new BreakPointNode();
 	node->code = *(char*)addr;
 	node->id.addr = (unsigned char*)addr;
@@ -276,8 +294,16 @@ int BreakPoint::RestoreBreakPoint(int pid,int tid, LPVOID addr) {
 	HANDLE ht = OpenThread(THREAD_ALL_ACCESS, 0, tid);
 	if (ht) {
 		DWORD oldprotect = 0;
-		LPVOID address = GetAlignAddress(addr);
-		ret = VirtualProtect((LPVOID)address, 1, PAGE_EXECUTE_READWRITE, &oldprotect);
+		//LPVOID address = GetAlignAddress(addr);
+		ret = VirtualProtect((LPVOID)addr, 1, PAGE_EXECUTE_READWRITE, &oldprotect);
+
+		int offset = offsetof(BreakPointNode, id);
+		BPIdentifier id;
+		id.addr = addr;
+		id.pid = pid;
+		BreakPointNode* node = (BreakPointNode*)search(offset, (char*)&id, sizeof(BPIdentifier));
+		*(unsigned char*)addr = node->code;
+
 		CONTEXT context;
 		context.ContextFlags = CONTEXT_FULL | CONTEXT_DEBUG_REGISTERS;
 		ret = GetThreadContext(ht, &context);
@@ -287,21 +313,12 @@ int BreakPoint::RestoreBreakPoint(int pid,int tid, LPVOID addr) {
 		context.Eip--;
 #endif
 		ret = SetThreadContext(ht, &context);
-
 		CloseHandle(ht);
 
-		int offset = offsetof(BreakPointNode, id);
-		BPIdentifier id;
-		id.addr = addr;
-		id.pid = pid;
-		BreakPointNode* node = (BreakPointNode*)search(offset, (char*)&id, sizeof(BPIdentifier));
-		*(unsigned char*)addr = node->code;
-
 		if (node->param) {
-			//delete node->param;
+
 		}
 		remove(&(node->list));
-		//delete node;
 	}
 
 	return ret;

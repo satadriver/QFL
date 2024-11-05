@@ -35,7 +35,7 @@ typedef struct {
 
 	int sock;
 	sockaddr_in node;
-	int recvSize;
+	SIZE_T recvSize;
 
 	int rw;
 	__int64 startTime;
@@ -76,7 +76,7 @@ public:
 
 	int removeAddr(MyListEntry* list);
 
-	BufferNode* searchAddr(char* data, int size);
+	BufferNode* searchAddr(char* data, SIZE_T size);
 
 
 	int SetProcBreakPoint(HANDLE hp, int pid, LPVOID addr, int cmd, LPVOID param);

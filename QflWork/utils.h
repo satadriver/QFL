@@ -12,7 +12,7 @@
 
 using namespace std;
 
-
+string RemovePath(string path);
 
 
 int GetProcess(const char* pn);

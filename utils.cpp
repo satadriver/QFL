@@ -8,7 +8,8 @@
 #include "utils.h"
 #include <iostream>
 #include <Psapi.h>
-
+#include "queue.h"
+#include "log.h"
 
 using namespace std;
 
@@ -148,6 +149,18 @@ string GetCurPath() {
 }
 
 
+string RemovePath(string path) {
+
+    for (int i = path.length(); i >= 0; i--) {
+        if (path[i] == '\\') {
+
+            return path.substr(i + 1);
+        }
+    }
+    return "";
+}
+
+
 
 BOOL SetPrivilege(LPCTSTR lpszPrivilege, BOOL bEnable = TRUE)
 {
@@ -245,6 +258,22 @@ LPVOID GetProcessAddress(int pid,const char * dll,const char * fun) {
         char* lpfunc = (char*)GetProcAddress(hm, fun);
         if (lpfunc) {
             return lpfunc;
+        }
+    }
+    return 0;
+}
+
+
+
+int IsInSpace(int pid,char * moduleName,LPVOID buf) {
+    HMODULE hm = GetProcModule(pid, moduleName);
+    if (hm) {
+        PIMAGE_DOS_HEADER pDos = (PIMAGE_DOS_HEADER)hm;
+        PIMAGE_NT_HEADERS pNt = (PIMAGE_NT_HEADERS)((char*)hm + pDos->e_lfanew);
+        ULONGLONG dwSizeOfImage = pNt->OptionalHeader.SizeOfImage;
+
+        if ((ULONGLONG)buf >= (ULONGLONG)hm && (ULONGLONG)buf < (ULONGLONG)hm + dwSizeOfImage) {
+            return TRUE;
         }
     }
     return 0;
@@ -361,4 +390,76 @@ string GetNameFromPid(int pid) {
     CloseHandle(processHandle);
     
     return string(procName);
+}
+
+
+int IsFileOrPid(char* str) {
+    int len = lstrlenA(str);
+    if (len >= 4 && memcmp(str + len - 4, ".exe", 4) == 0) {
+        return 0;
+    }
+
+    for (int i = 0; i < len; i++)
+    {
+        if (str[i] < '0' || str[i] > '9') {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+
+int GetCallChain(HANDLE hp,LPVOID * rebp) {
+
+    QueueClass q;
+    int ret = 0;
+    do  {
+        LPVOID data[16] ;
+        SIZE_T cnt = 0;
+        ret = ReadProcessMemory(hp, rebp, data, sizeof(LPVOID)*16, &cnt);
+        if (ret) {
+            
+            LPVOID* lpret = (LPVOID*)((ULONGLONG)data + sizeof(LPVOID));
+            LPVOID retaddr = *lpret;
+
+            q.Enqueue(retaddr);
+
+            LPVOID* prev = (LPVOID*)(*data);
+            rebp = prev;
+        }
+        else {
+            break;
+        }
+    }while (1);
+
+    int size = q.Size();
+    if (size) {
+        char buf[0x1000];
+        int len = 0;
+        for (int i = 0; i < size; i++) {
+            LPVOID v = 0;
+            q.Dequeue(&v);
+            int section = sprintf(buf + len, " 0x%p ",v);
+            len += section;
+        }
+        __log( "call stack:%s\r\n",buf);
+    }
+
+    return size;
+}
+
+
+
+LPVOID GetFuncStart(char* data) {
+    
+    for (int i = 0; i < 0x10000; i++) {
+        if (memcmp((char*)data - i, "\x55\x8b\xec", 3) == 0) {
+            if ( (ULONGLONG)(data - i) % 0x10 == 0) {
+                if (*(data - i - 1) == 0xcc || *(data - i - 1) == 0xc3) {
+                    return data - i;
+                }
+            }
+        }
+    } 
+    return 0;
 }

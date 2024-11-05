@@ -4,6 +4,7 @@
 #include <iostream>
 #include "breakPoint.h"
 #include <unordered_map>
+#include "queue.h"
 
 using namespace std;
 
@@ -55,6 +56,11 @@ public:
 	LPVOID m_entryAddr;
 
 	BreakPoint* m_breakPoint;
+
+	//QueueClass m_qc;
+
+	char* m_moduleBase;
+	SIZE_T m_moduleSize;
 
 	LPVOID m_recv;
 	LPVOID m_recvfrom;

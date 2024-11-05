@@ -127,13 +127,14 @@ int __stdcall testClient(string ip, int port) {
 
 	ret = connect(s, (sockaddr*)&sa, sizeof(sockaddr_in));
 	int bufsize = 0x1000;
-	char* sendbuf = new char[bufsize];
-	memset(sendbuf, 0x41, bufsize);
 
+	char* sendbuf = new char[bufsize];
 	while (1) {
+		
+		//memset(sendbuf, 0x41, bufsize);
 		const char* str = "hello, how are you?";
-		lstrcpyA(sendbuf, str);
-		ret = send(s, (char*)sendbuf, lstrlenA(str) + 1, 0);
+		//lstrcpyA(sendbuf, str);
+		ret = send(s, (char*)str, lstrlenA(str) + 1, 0);
 		if (ret > 0) {
 
 		}
@@ -143,11 +144,11 @@ int __stdcall testClient(string ip, int port) {
 			sendbuf[ret] = 0;
 			printf("%s\r\n", sendbuf);
 		}
-
+		
 		Sleep(6000);
 	}
 
-
+	delete sendbuf;
 	return 0;
 }
 
@@ -178,13 +179,14 @@ int __stdcall testServer() {
 
 	ret = listen(s, 16);
 
+	char* recvbuf = new char[0x1000];
 	while (1) {
 		sockaddr_in client;
 		int csize = sizeof(sockaddr_in);
 		SOCKET sc = accept(s, (sockaddr*)&client, &csize);
 		if (sc != INVALID_SOCKET) {
 			while (1) {
-				char* recvbuf = new char[0x1000];
+				
 				ret = recv(sc, recvbuf, 0x1000, 0);
 				if (ret <= 0) {
 					closesocket(sc);
@@ -194,6 +196,7 @@ int __stdcall testServer() {
 
 				const char* data = "fine,thank you,and you ?";
 				ret = send(sc, data, lstrlenA(data)+1, 0);
+				
 			}
 
 		}
@@ -201,5 +204,7 @@ int __stdcall testServer() {
 			continue;
 		}
 	}
+
+	delete recvbuf;
 	return 0;
 }
