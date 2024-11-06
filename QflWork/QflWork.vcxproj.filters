@@ -30,9 +30,6 @@
     <ClCompile Include="log.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="hardwareBP.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="utils.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -51,6 +48,15 @@
     <ClCompile Include="..\thirdparty\hde\hde64.c">
       <Filter>源文件\hde</Filter>
     </ClCompile>
+    <ClCompile Include="hwBreakPoint.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="queue.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="debug.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="main.h">
@@ -60,9 +66,6 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="log.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="hardwareBP.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="utils.h">
@@ -91,6 +94,15 @@
     </ClInclude>
     <ClInclude Include="..\thirdparty\hde\table64.h">
       <Filter>头文件\hde</Filter>
+    </ClInclude>
+    <ClInclude Include="hwBreakPoint.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="queue.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="debug.h">
+      <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

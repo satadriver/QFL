@@ -2,7 +2,7 @@
 #include "log.h"
 #include <stdio.h>
 
-int __cdecl log(const WCHAR* format, ...) {
+int __cdecl __log(const WCHAR* format, ...) {
 
 	WCHAR szbuf[2048];
 
@@ -16,12 +16,14 @@ int __cdecl log(const WCHAR* format, ...) {
 
 	OutputDebugStringW(szbuf);
 
+	wprintf(L"%S\r\n",(char*)szbuf);
+
 	return nByteWrite;
 }
 
 
 
-int __cdecl log(const CHAR* format, ...) {
+int __cdecl __log(const CHAR* format, ...) {
 
 	CHAR szbuf[2048];
 
@@ -34,6 +36,8 @@ int __cdecl log(const CHAR* format, ...) {
 	va_end(pArgList);
 
 	OutputDebugStringA(szbuf);
+
+	printf("%s\r\n", szbuf);
 
 	return nByteWrite;
 }

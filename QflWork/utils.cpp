@@ -1,22 +1,165 @@
-
-
 #include <Windows.h>
-#include <winsock.h>
-#include <string>
-#include <TlHelp32.h> 
-#include "main.h"
-#include <vector>
+#include <stdio.h>
+#include <windows.h>
+#include <Tlhelp32.h>
+#include <windows.h>
+#include <Tlhelp32.h>
+
+#include "utils.h"
 #include <iostream>
-#include <Windows.h>
 #include <Psapi.h>
-#include <TlHelp32.h>
-
-#pragma comment(lib,"ws2_32.lib")
+#include "queue.h"
+#include "log.h"
 
 using namespace std;
 
+extern "C" __declspec(dllexport) int mytestfunc() {
+    MessageBoxA(0, "mytestfunc", "mytestfunc", MB_OK);
+    return 0;
+}
 
-HANDLE m_hMutex = 0;
+int ExecFunction(char* szfunc) {
+    int ret = 0;
+    HMODULE hm = GetModuleHandleA(0);
+    ptrfunction lpfunc = (ptrfunction)GetProcAddress(hm, szfunc);
+    if (lpfunc) {
+        ret = lpfunc(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+    }
+    return ret;
+}
+
+int GetProcess(const char * pn)
+{
+    wchar_t wstrpn[1024];
+    int pnlen = MultiByteToWideChar(CP_ACP, 0, pn, -1, wstrpn, sizeof(wstrpn) / sizeof(wchar_t));
+    wstrpn[pnlen] = 0;
+
+    HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    if (INVALID_HANDLE_VALUE == hSnapshot)
+    {
+        return 0;
+    }
+    PROCESSENTRY32 pi;
+    pi.dwSize = sizeof(PROCESSENTRY32); 
+    BOOL bRet = Process32First(hSnapshot, &pi);
+    while (bRet)
+    {
+        if ( _wcsicmp(pi.szExeFile , wstrpn) == 0) {
+            return pi.th32ProcessID;
+        }
+
+        bRet = Process32Next(hSnapshot, &pi);
+    }
+    return 0;
+}
+
+string GetProcess(int pid)
+{
+    HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    if (INVALID_HANDLE_VALUE == hSnapshot)
+    {
+        return string("");
+    }
+    PROCESSENTRY32 pi;
+    pi.dwSize = sizeof(PROCESSENTRY32); 
+    BOOL bRet = Process32First(hSnapshot, &pi);
+    while (bRet)
+    {
+        if (pi.th32ProcessID == pid) {
+            char pn[1024];
+            int pnlen = WideCharToMultiByte(CP_ACP, 0, pi.szExeFile, -1, pn, sizeof(pn) / sizeof(char),0,0);
+            pn[pnlen] = 0;
+            return string(pn);
+        }
+        bRet = Process32Next(hSnapshot, &pi);
+    }
+    return string("");
+}
+
+
+BOOL PsKillProcess(const char* KillProcessName)
+{
+    int ret = 0;
+    DWORD dwPid = GetProcess(KillProcessName);
+    HANDLE hProcess = NULL;
+    if (dwPid != 0)
+    {
+        hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, dwPid);
+        if (hProcess != NULL)
+        {
+           ret = TerminateProcess(hProcess, 0);
+        }
+    }
+    return ret;
+}
+
+
+
+int Is64Bit() {
+    SYSTEM_INFO si = { 0 };
+
+    int ret = 0;
+    GetNativeSystemInfo(&si);
+    if (si.dwPageSize == 0) {
+        GetSystemInfo(&si);
+    }
+    if (si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64) {
+        return TRUE;
+    }
+    else if (si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_INTEL) {
+        return 0;
+    }
+
+    return 0;
+}
+
+
+int IsProc64Bit(HANDLE h) {
+    int wow64 = 0;
+    int ret = IsWow64Process(h, &wow64);
+
+    if (wow64) {
+        return 32;
+    }
+    else {
+        int bit64 = Is64Bit();   
+        if (bit64) {
+            return 64;
+        }
+        else {
+            return 32;
+        }
+    }
+
+    return 64;
+}
+
+
+
+string GetCurPath() {
+    char szmod[MAX_PATH];
+    int mlen = GetModuleFileNameA(0, szmod, sizeof(szmod));
+    for (int i = mlen; i >= 0; i--) {
+        if (szmod[i] == '\\') {
+            szmod[i+1] = 0;
+            return string(szmod);
+        }
+    }
+    return "";
+}
+
+
+string RemovePath(string path) {
+
+    for (int i = path.length(); i >= 0; i--) {
+        if (path[i] == '\\') {
+
+            return path.substr(i + 1);
+        }
+    }
+    return "";
+}
+
 
 
 BOOL SetPrivilege(LPCTSTR lpszPrivilege, BOOL bEnable = TRUE)
@@ -49,7 +192,7 @@ BOOL SetPrivilege(LPCTSTR lpszPrivilege, BOOL bEnable = TRUE)
         OutputDebugStringA(s);
         goto __EXIT;
     }
-    if (GetLastError() == ERROR_NOT_ALL_ASSIGNED)//查看是否真的设置成功了
+    if (GetLastError() == ERROR_NOT_ALL_ASSIGNED)
     {
         OutputDebugStringA("The token does not have the specified privilege. \n");
         goto __EXIT;
@@ -67,7 +210,6 @@ __EXIT:
     }
     return bRet;
 }
-
 
 
 VOID ElevationPrivilege()
@@ -110,100 +252,214 @@ VOID ElevationPrivilege()
 }
 
 
-
-void AutoPowerOn()
-{
-    HKEY hKey;
-    //std::string strRegPath = "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run";
-
-    //1、找到系统的启动项  
-    if (RegOpenKeyExA(HKEY_CURRENT_USER, ("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run"), 0,
-        KEY_ALL_ACCESS, &hKey) == ERROR_SUCCESS) ///打开启动项       
-    {
-        //2、得到本程序自身的全路径
-        CHAR strExeFullDir[MAX_PATH];
-        GetModuleFileNameA(NULL, strExeFullDir, MAX_PATH);
-
-        //3、判断注册表项是否已经存在
-        CHAR strDir[MAX_PATH] = { 0 };
-        DWORD nLength = MAX_PATH;
-        long result = RegGetValueA(hKey, nullptr, ("GISRestart"), RRF_RT_REG_SZ, 0, strDir, &nLength);
-
-
-        //4、已经存在
-        if (result != ERROR_SUCCESS || lstrcmpiA(strExeFullDir, strDir) != 0)
-        {
-            //5、添加一个子Key,并设置值，"GISRestart"是应用程序名字（不加后缀.exe） 
-            RegSetValueExA(hKey, ("GISRestart"), 0, REG_SZ, (LPBYTE)strExeFullDir,
-                (lstrlenA(strExeFullDir) + 1) * sizeof(CHAR));
-
+LPVOID GetProcessAddress(int pid,const char * dll,const char * fun) {
+    HMODULE hm = GetProcModule(pid, dll);
+    if (hm) {
+        char* lpfunc = (char*)GetProcAddress(hm, fun);
+        if (lpfunc) {
+            return lpfunc;
         }
-
-        //6、关闭注册表
-        RegCloseKey(hKey);
-    }
-}
-
-
-//取消当前程序开机启动
-void CanclePowerOn()
-{
-    HKEY hKey;
-    //std::string strRegPath = "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run";
-
-    //1、找到系统的启动项  
-    if (RegOpenKeyExA(HKEY_CURRENT_USER, ("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run"), 0,
-        KEY_ALL_ACCESS, &hKey) == ERROR_SUCCESS)
-    {
-        //2、删除值
-        RegDeleteValueA(hKey, ("GISRestart"));
-
-
-        //3、关闭注册表
-        RegCloseKey(hKey);
-    }
-}
-
-
-
-
-int CheckExist() {
-    m_hMutex = CreateMutexA(NULL, TRUE, "cltDrv_Mutext");
-    if (m_hMutex && GetLastError() == ERROR_ALREADY_EXISTS)
-    {
-
-        CloseHandle(m_hMutex);
-        m_hMutex = NULL;
-        ExitProcess(0);
-    }
-    return TRUE;
-}
-
-
-int GetProcess(const char* pn)
-{
-    wchar_t wstrpn[1024];
-    int pnlen = MultiByteToWideChar(CP_ACP, 0, pn, -1, wstrpn, sizeof(wstrpn) / sizeof(wchar_t));
-    wstrpn[pnlen] = 0;
-
-    HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-    if (INVALID_HANDLE_VALUE == hSnapshot)
-    {
-        return 0;
-    }
-    PROCESSENTRY32 pi;
-    pi.dwSize = sizeof(PROCESSENTRY32); //第一次使用必须初始化成员
-    BOOL bRet = Process32First(hSnapshot, &pi);
-    while (bRet)
-    {
-        if (_wcsicmp(pi.szExeFile, wstrpn) == 0) {
-            return pi.th32ProcessID;
-        }
-        //log("进程ID = %d ,进程路径 = %s\r\n", pi.th32ProcessID, pi.szExeFile);
-        bRet = Process32Next(hSnapshot, &pi);
     }
     return 0;
 }
 
 
 
+int IsInSpace(int pid,char * moduleName,LPVOID buf) {
+    HMODULE hm = GetProcModule(pid, moduleName);
+    if (hm) {
+        PIMAGE_DOS_HEADER pDos = (PIMAGE_DOS_HEADER)hm;
+        PIMAGE_NT_HEADERS pNt = (PIMAGE_NT_HEADERS)((char*)hm + pDos->e_lfanew);
+        ULONGLONG dwSizeOfImage = pNt->OptionalHeader.SizeOfImage;
+
+        if ((ULONGLONG)buf >= (ULONGLONG)hm && (ULONGLONG)buf < (ULONGLONG)hm + dwSizeOfImage) {
+            return TRUE;
+        }
+    }
+    return 0;
+}
+
+
+HMODULE GetProcModule(DWORD pid, CONST CHAR* moduleName) {	
+
+    wchar_t wstrpn[1024];
+    int pnlen = MultiByteToWideChar(CP_ACP, 0, moduleName, -1, wstrpn, sizeof(wstrpn) / sizeof(wchar_t));
+    wstrpn[pnlen] = 0;
+
+    MODULEENTRY32 moduleEntry;
+    HANDLE handle = ::CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, pid); 
+    if (!handle) {
+        return NULL;
+    }
+    ZeroMemory(&moduleEntry, sizeof(MODULEENTRY32));
+    moduleEntry.dwSize = sizeof(MODULEENTRY32);
+    if (!Module32First(handle, &moduleEntry)) {
+        CloseHandle(handle);
+        return NULL;
+    }
+
+    do {
+        if (_wcsicmp(moduleEntry.szModule, wstrpn) == 0)
+        { 
+            return moduleEntry.hModule; 
+        }
+    } while (Module32Next(handle, &moduleEntry));
+    CloseHandle(handle);
+    return 0;
+}
+
+
+
+LPVOID GetAlignAddress(LPVOID addr) {
+    SYSTEM_INFO si = { 0 };
+
+    GetNativeSystemInfo(&si);
+    ULONGLONG ps = si.dwPageSize;
+
+    ULONGLONG mask = ~(ps - 1);
+    ULONGLONG ret = (ULONGLONG)addr & mask;
+    return (LPVOID)ret;
+
+}
+
+
+
+int GetAddressBoundary(LPVOID addr, SIZE_T size,LPVOID*start,LPVOID*end) {
+    int ret = 0;
+    SYSTEM_INFO si = { 0 };
+    GetNativeSystemInfo(&si);
+
+    ULONGLONG ps = si.dwPageSize;
+
+    ULONGLONG mask = ~(ps - 1);
+
+    *start = (LPVOID)((ULONGLONG)addr & mask);
+
+    *end = (LPVOID)(((ULONGLONG)addr + size + si.dwPageSize) & mask);
+
+    return ret;
+}
+
+
+int ProcMemProtect(HANDLE hp,LPVOID addr, SIZE_T size,int v) {
+    DWORD old = 0;
+    return VirtualProtectEx(hp, addr, size, v, &old);
+
+    int ret = 0;
+    SYSTEM_INFO si = { 0 };
+
+    GetNativeSystemInfo(&si);
+    ULONGLONG ps = si.dwPageSize;
+
+    ULONGLONG mask = ~(ps - 1);
+
+    LPVOID start = (LPVOID)((ULONGLONG)addr & mask);
+
+    //SIZE_T startsize = (ULONGLONG)addr - (ULONGLONG)start;
+
+    LPVOID end = (LPVOID)( ((ULONGLONG)addr + size + si.dwPageSize) & mask) ;
+
+    SIZE_T totalsize = (ULONGLONG)end - (ULONGLONG)start;
+    
+    ret = VirtualProtectEx(hp, start, totalsize, v, &old);
+    return ret;
+}
+
+
+
+string GetNameFromPid(int pid) {
+
+    char procName[MAX_PATH] ;
+
+    HANDLE processHandle = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
+    if (processHandle == NULL) {
+        return "";
+    }
+    //auto len = GetModuleBaseNameA(processHandle, NULL, procName, MAX_PATH);
+    //if (len == 0) {
+    //    printf("Get base namefailed, err: %u", GetLastError());
+    //}
+    //printf("%s\n", tempProcName);
+
+    GetModuleFileNameExA(processHandle, NULL, procName, MAX_PATH);
+    //printf("%s\n", tempProcName);
+
+    //GetProcessImageFileNameA(processHandle, procName, MAX_PATH);
+    //printf("%s\n", tempProcName);
+
+    CloseHandle(processHandle);
+    
+    return string(procName);
+}
+
+
+int IsFileOrPid(char* str) {
+    int len = lstrlenA(str);
+    if (len >= 4 && memcmp(str + len - 4, ".exe", 4) == 0) {
+        return 0;
+    }
+
+    for (int i = 0; i < len; i++)
+    {
+        if (str[i] < '0' || str[i] > '9') {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+
+int GetCallChain(HANDLE hp,LPVOID * rebp) {
+
+    QueueClass q;
+    int ret = 0;
+    do  {
+        LPVOID data[16] ;
+        SIZE_T cnt = 0;
+        ret = ReadProcessMemory(hp, rebp, data, sizeof(LPVOID)*16, &cnt);
+        if (ret) {
+            
+            LPVOID* lpret = (LPVOID*)((ULONGLONG)data + sizeof(LPVOID));
+            LPVOID retaddr = *lpret;
+
+            q.Enqueue(retaddr);
+
+            LPVOID* prev = (LPVOID*)(*data);
+            rebp = prev;
+        }
+        else {
+            break;
+        }
+    }while (1);
+
+    int size = q.Size();
+    if (size) {
+        char buf[0x1000];
+        int len = 0;
+        for (int i = 0; i < size; i++) {
+            LPVOID v = 0;
+            q.Dequeue(&v);
+            int section = sprintf_s(buf + len, sizeof(buf)," 0x%p ",v);
+            len += section;
+        }
+        __log( "call stack:%s\r\n",buf);
+    }
+
+    return size;
+}
+
+
+
+LPVOID GetFuncStart(char* data) {
+    
+    for (int i = 0; i < 0x10000; i++) {
+        if (memcmp((char*)data - i, "\x55\x8b\xec", 3) == 0) {
+            if ( (ULONGLONG)(data - i) % 0x10 == 0) {
+                if (*(data - i - 1) == 0xcc || *(data - i - 1) == 0xc3) {
+                    return data - i;
+                }
+            }
+        }
+    } 
+    return 0;
+}

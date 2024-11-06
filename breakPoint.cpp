@@ -242,7 +242,7 @@ int BreakPoint::RestoreProcBreakPoint(HANDLE hp,int pid, int tid, LPVOID addr,in
 					ret = HOOK_NETWORK_RETURN;
 				}
 				SIZE_T size = (char*)info->bid.top - (char*)info->bid.base;
-				int res = ProcMemProtect(hp, (LPVOID)info->bid.base, size, PAGE_NOACCESS);
+				int res = ProcMemProtect(hp, (LPVOID)info->bid.base, size, PAGE_GUARD);
 				//int res = ProcMemProtect(hp, info->buf, (SIZE_T)info->size, PAGE_NOACCESS);
 			}
 		}

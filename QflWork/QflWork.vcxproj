@@ -148,12 +148,14 @@
     <ClCompile Include="..\thirdparty\hde\hde32.c" />
     <ClCompile Include="..\thirdparty\hde\hde64.c" />
     <ClCompile Include="breakPoint.cpp" />
-    <ClCompile Include="hardwareBP.cpp" />
+    <ClCompile Include="debug.cpp" />
+    <ClCompile Include="hwBreakPoint.cpp" />
     <ClCompile Include="Inlinehook.cpp" />
     <ClCompile Include="list.cpp" />
     <ClCompile Include="log.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="network.cpp" />
+    <ClCompile Include="queue.cpp" />
     <ClCompile Include="utils.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -163,12 +165,14 @@
     <ClInclude Include="..\thirdparty\hde\table32.h" />
     <ClInclude Include="..\thirdparty\hde\table64.h" />
     <ClInclude Include="breakPoint.h" />
-    <ClInclude Include="hardwareBP.h" />
+    <ClInclude Include="debug.h" />
+    <ClInclude Include="hwBreakPoint.h" />
     <ClInclude Include="Inlinehook.h" />
     <ClInclude Include="list.h" />
     <ClInclude Include="log.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="network.h" />
+    <ClInclude Include="queue.h" />
     <ClInclude Include="utils.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

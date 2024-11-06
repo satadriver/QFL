@@ -21,7 +21,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp">
+    <ClCompile Include="qfl.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="utils.cpp">
@@ -62,7 +62,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="main.h">
+    <ClInclude Include="qfl.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="utils.h">

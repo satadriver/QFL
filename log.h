@@ -10,4 +10,4 @@
 
 int __cdecl __log(const WCHAR* format, ...);
 
-int __cdecl __log(const CHAR* format, ...);
+int __cdecl __log(const char* format, ...);

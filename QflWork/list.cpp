@@ -3,23 +3,35 @@
 #include <Windows.h>
 
 
+
+
+
+
+
 MyListClass::MyListClass() {
 	m_list = new MyListEntry;
 	m_list->next = 0;
 	m_list->prev = 0;
+	m_keyOffset = 0;
+	m_keySize = 0;
 }
 
 
 MyListClass::~MyListClass() {
-	MyListEntry* f = m_list->next;
-	MyListEntry* b = f;
+
+	MyListEntry* n = m_list->next;
+	MyListEntry* b = n;
+
 	do
 	{
-		MyListEntry* t = f;
-		
-		f = f->next;
+		if (n == 0) {
+			break;
+		}
+
+		MyListEntry* t = n;
+		n = n->next;
 		delete t;
-	} while (f != b);
+	} while (n != b);
 
 	if (m_list) {
 		delete m_list;
@@ -28,103 +40,139 @@ MyListClass::~MyListClass() {
 
 
 MyListEntry* MyListClass::Search(int offset,char * data,int size) {
+	if (data == 0 || size == 0) {
+		return 0;
+	}
 
-	MyListEntry* f = m_list->next;
-	MyListEntry* b = f;
-	
+	MyListEntry* n = m_list->next;
+	MyListEntry* b = n;
+
 	do
 	{
-		char* target = (char*)((char*)f + offset);
-		if (memcmp(data,target,size) == 0) {
-			return f;
+		if (n == 0) {
+			break;
 		}
-		f = f->next;
-	} while (f != b);
+		char* obj = (char*)((char*)n + offset);
+		if (memcmp(data, obj,size) == 0) {
+			return n;
+		}
+		n = n->next;
+
+	} while (n != b);
 
 	return 0;
 }
+
+
+
 
 
 int MyListClass::InsertHead(MyListEntry* list) {
-	MyListEntry* f = m_list->next;
+	if (list == 0) {
+		return 0;
+	}
+	MyListEntry* n = m_list->next;
 	MyListEntry* p = m_list->prev;
 
-	if (f == 0 || p == 0) {
+	if (n == 0 || p == 0) {
 		m_list->next = list;
 		m_list->prev = list;
+
 		list->prev = list;
 		list->next = list;
 		return 0;
 	}
 
 	p->next = list;
-	f->prev = list;
+	n->prev = list;
 
 	list->prev = p;
-	list->next = f;
+	list->next = n;
 
 	m_list->next = list;
 
-	return 0;
+	return TRUE;
 }
 
 int MyListClass::InsertEnd(MyListEntry* list) {
-	MyListEntry* f = m_list->next;
-	
-	MyListEntry* p = m_list->prev;
-
-	if (f == 0 || p == 0) {
-		m_list->next = list;
-		m_list->prev = list;
-		list->prev = list;
-		list->next = list;
+	if (list == 0) {
 		return 0;
 	}
 
+	MyListEntry* n = m_list->next;
+	MyListEntry* p = m_list->prev;
+
+	if (n == 0 || p == 0) {
+		m_list->next = list;
+		m_list->prev = list;
+		list->next = list;
+		list->prev = list;
+		return TRUE;
+	}
+
 	p->next = list;
-	f->prev = list;
+	n->prev = list;
 
 	list->prev = p;
-	list->next = f;
+	list->next = n;
 
 	m_list->prev = list;
 
-	return 0;
+	return TRUE;
 }
 
 
 int MyListClass::Remove(MyListEntry* list) {
+	if (list == 0 || list == m_list) {
+		return 0;
+	}
+
 	if (list == m_list->next) {
-		MyListEntry* n = m_list->next;
+		
 		MyListEntry* p = m_list->prev;
-		if (p == n) {
+		if (p == list) {
 			m_list->next = 0;
 			m_list->prev = 0;
 		}
 		else {
-			m_list->next = n;
+			MyListEntry* n = m_list->next->next;
 			n->prev = p;
 			p->next = n;
+			m_list->next = n;
+		}
+		delete list;		
+		return TRUE;
+	}
+	else if (list == m_list->prev) {
+		MyListEntry* n = m_list->next;	
+		if (list == n) {
+			m_list->next = 0;
+			m_list->prev = 0;
+		}
+		else {
+			MyListEntry* p = m_list->prev->prev;		
+			n->prev = p;
+			p->next = n;
+			m_list->prev = p;
 		}
 		delete list;
-		
-		return 0;
+		return TRUE;
 	}
 
-	MyListEntry* f = m_list->next;
-	MyListEntry* b = f;
+	MyListEntry* n = m_list->next;
+	MyListEntry* b = n;
 	do
 	{
-		if (list == f) {
-			MyListEntry* p = f->prev;
-			MyListEntry* n = f->next;
-			p->next = n;
-			n->prev = p;
+		if (list == n) {
+			MyListEntry* prev = n->prev;
+			MyListEntry* next = n->next;
+			prev->next = next;
+			next->prev = prev;
 			delete list;
-			break;
+			return TRUE;
 		}
-		f = f->next;
-	} while (f != b);
+		n = n->next;
+	} while (n != b);
 
-	return 0;
+	return FALSE;
 }

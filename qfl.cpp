@@ -3,7 +3,7 @@
 #include "inject.h"
 #include "utils.h"
 #include "debug.h"
-#include "main.h"
+#include "qfl.h"
 #include "network.h"
 
 int fuzzEntry(int pid) {

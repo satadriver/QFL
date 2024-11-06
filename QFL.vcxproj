@@ -187,7 +187,7 @@
     <ClCompile Include="list.cpp" />
     <ClCompile Include="LoadPE.cpp" />
     <ClCompile Include="log.cpp" />
-    <ClCompile Include="main.cpp" />
+    <ClCompile Include="qfl.cpp" />
     <ClCompile Include="network.cpp" />
     <ClCompile Include="queue.cpp" />
     <ClCompile Include="thirdparty\hde\hde32.c" />
@@ -202,7 +202,7 @@
     <ClInclude Include="list.h" />
     <ClInclude Include="LoadPE.h" />
     <ClInclude Include="log.h" />
-    <ClInclude Include="main.h" />
+    <ClInclude Include="qfl.h" />
     <ClInclude Include="network.h" />
     <ClInclude Include="queue.h" />
     <ClInclude Include="thirdparty\hde\hde32.h" />

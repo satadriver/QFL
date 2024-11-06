@@ -1,7 +1,7 @@
 #pragma once
 
 
-#define OffsetOf(TYPE, MEMBER) ((size_t) & ((TYPE *)0)->MEMBER )
+
 
 #pragma pack(1)
 
@@ -14,16 +14,23 @@ typedef struct _MyListEntry {
 
 
 class MyListClass {
-	MyListEntry* m_list;
 public:
+	MyListEntry* m_list=0;
+
+	int m_keyOffset;
+	int m_keySize;
+
 	MyListClass();
 
 	~MyListClass();
 
 	int InsertEnd(MyListEntry* list);
+
 	int InsertHead(MyListEntry* list);
 
 	MyListEntry* Search(int offset,char * data,int size);
 
 	int Remove(MyListEntry* list);
+
+
 };

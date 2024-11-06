@@ -7,30 +7,15 @@
 
 int Procedure() {
     //MessageBoxA(0, "test_text", "test_cap", MB_OK);
-    HANDLE ht = CreateThread(0, 0, (LPTHREAD_START_ROUTINE)HardwareBP::BreakPointThead, (LPVOID)0, 0, 0);
-    if (ht) {
-        CloseHandle(ht);
-    }
+    //HANDLE ht = CreateThread(0, 0, (LPTHREAD_START_ROUTINE)HardwareBP::BreakPointThead, (LPVOID)0, 0, 0);
+    //if (ht) {
+    //    CloseHandle(ht);
+    //}
     return 0;
 }
 
 
-void test() {
-    MyListClass* clsList = new MyListClass();
-    BreakPointNode *node;
-    for (int i = 0; i < 0x10000; i++) {
-        node = new BreakPointNode;
-        node->addr = (unsigned char*)i;
-        node->code = i;
-        clsList->InsertHead(&node->list);
-    }
-    int offset = offsetof(BreakPointNode, addr);
-    int v = 128;
-    MyListEntry* lpl = clsList->Search(offset, (char*)&v, 4);
 
-    delete clsList;
-
-}
 
 
 #ifdef _WINDLL
@@ -75,7 +60,6 @@ BOOL WINAPI DllMain(
 
 int __stdcall WinMain(HINSTANCE hinst, HINSTANCE prev, char* cmd, int show) {
 
-    test();
 
     wchar_t * arg = GetCommandLine();
     int argc = 0;
@@ -91,6 +75,7 @@ int __stdcall WinMain(HINSTANCE hinst, HINSTANCE prev, char* cmd, int show) {
         //CloseHandle(ht);
     }
 
+    /*
     ht = CreateThread(0, 0, (LPTHREAD_START_ROUTINE)TestThread, (LPVOID)0, 0, 0);
     if (ht) {
         
@@ -101,7 +86,7 @@ int __stdcall WinMain(HINSTANCE hinst, HINSTANCE prev, char* cmd, int show) {
     if (ht) {
         //WaitForSingleObject(ht, INFINITE);
         CloseHandle(ht);
-    }
+    }*/
 
     Sleep(-1);
     return 0;

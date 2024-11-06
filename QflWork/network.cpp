@@ -10,6 +10,14 @@ using namespace std;
 #pragma comment(lib,"ws2_32.lib")
 
 
+
+
+int CmdProc(char* data, int size) {
+	int cmd = *(int*)data;
+	return 0;
+}
+
+
 Network::Network(int type,const char * ip,int port) {
 	WSADATA wsa = { 0 };
 	int ret = WSAStartup(0x0202, &wsa);
@@ -53,12 +61,12 @@ int __stdcall Network::UdpServer(Network* instance) {
 		char recvbuf[1024];
 		int addrsize = sizeof(sockaddr_in);
 		int recvlen = recvfrom(s, recvbuf, sizeof(recvbuf), 0, (sockaddr*)&saClient, &addrsize);
-		if (recvlen > 0) {
+		if (recvlen > 0 && recvlen < 1024) {
 			recvbuf[recvlen] = 0;
-			printf("%s\r\n", recvbuf);
 		}
 		else {
 			perror("recvfrom error\r\n");
+			break;
 		}
 	}
 
@@ -180,22 +188,21 @@ int __stdcall Network::TcpServer(Network* instance) {
 		int csize = sizeof(sockaddr_in);
 		SOCKET sc = accept(s, (sockaddr*)&client, &csize);
 		if (sc != INVALID_SOCKET) {
-			while (1) {
-				char recvbuf[0x1000];
-				int recvlen = recv(sc, recvbuf, 0x1000, 0);
-				if (recvlen <= 0) {
-					closesocket(sc);
-					break;
-				}
-				recvbuf[recvlen] = 0;
-
-				const char* data = "fine,thank you,and you ?";
-				ret = send(sc, data, lstrlenA(data)+1, 0);
+			int bufsize = 0x1000;
+			char recvbuf[0x1000];
+			int recvlen = recv(sc, recvbuf, bufsize, 0);
+			if (recvlen <= 0 || recvlen >= bufsize) {
+				closesocket(sc);
+				continue;
 			}
-		}
-		else {
-			continue;
+			recvbuf[recvlen] = 0;
+
+			//const char* data = "fine,thank you,and you ?";
+			lstrcpyA(recvbuf, "\xAA\xBB\xCC\xDD");
+			ret = send(sc, recvbuf, 4, 0);
+			closesocket(sc);
 		}
 	}
+	
 	return 0;
 }

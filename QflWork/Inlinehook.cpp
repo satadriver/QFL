@@ -331,7 +331,7 @@ int inlinehook32(BYTE* newfun, BYTE* hookaddr, PROC* keepaddr, const WCHAR* func
 	HOOK_TRAMPS* trump = addTrump(funcname);
 	if (trump <= 0)
 	{
-		log(L"inlinehook32 addTrump function:%ws error\r\n", funcname);
+		__log(L"inlinehook32 addTrump function:%ws error\r\n", funcname);
 		return FALSE;
 	}
 

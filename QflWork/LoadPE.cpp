@@ -1,7 +1,7 @@
 #include <windows.h>
 #include <stdio.h>
 #include "LoadPE.h"
-#include "qfl.h"
+#include "main.h"
 
 
 VOID * ghThisHandle = 0;
