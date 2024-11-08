@@ -129,6 +129,7 @@ int __stdcall testClient(string ip, int port) {
 	int bufsize = 0x1000;
 
 	char* sendbuf = new char[bufsize];
+	//char* sendbuf = (char*)VirtualAlloc(0, 0x1000, MEM_COMMIT,PAGE_READWRITE);
 	while (1) {
 		
 		//memset(sendbuf, 0x41, bufsize);
@@ -180,6 +181,7 @@ int __stdcall testServer() {
 	ret = listen(s, 16);
 
 	char* recvbuf = new char[0x1000];
+	//char* recvbuf = (char*)VirtualAlloc(0, 0x1000, MEM_COMMIT, PAGE_READWRITE);
 	while (1) {
 		sockaddr_in client;
 		int csize = sizeof(sockaddr_in);

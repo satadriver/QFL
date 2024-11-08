@@ -139,7 +139,7 @@ int BreakPoint::SetProcBreakPoint(HANDLE hp,int pid,LPVOID addr, int cmd, LPVOID
 
 		unsigned char data[16] = { 0 };
 		SIZE_T cnt = 0;
-		ret = ReadProcessMemory(hp, addr, data, 16, &cnt);
+		ret = ReadProcessMemory(hp, addr, data, 1, &cnt);
 		if (data[0] == 0xcc) {
 			return 0;
 		}
@@ -199,7 +199,7 @@ int BreakPoint::RestoreProcBreakPoint(HANDLE hp,int pid, int tid, LPVOID addr,in
 		LPVOID address = GetAlignAddress(addr);
 		SYSTEM_INFO si = { 0 };
 		GetNativeSystemInfo(&si);
-		ret = VirtualProtectEx(hp, (LPVOID)address, si.dwPageSize, PAGE_EXECUTE_READWRITE, &oldprotect);
+		ret = VirtualProtectEx(hp, (LPVOID)addr, 1, PAGE_EXECUTE_READWRITE, &oldprotect);
 
 		unsigned char data[16] = { 0 };
 		SIZE_T cnt = 0;
@@ -242,8 +242,8 @@ int BreakPoint::RestoreProcBreakPoint(HANDLE hp,int pid, int tid, LPVOID addr,in
 					ret = HOOK_NETWORK_RETURN;
 				}
 				SIZE_T size = (char*)info->bid.top - (char*)info->bid.base;
-				int res = ProcMemProtect(hp, (LPVOID)info->bid.base, size, PAGE_GUARD);
-				//int res = ProcMemProtect(hp, info->buf, (SIZE_T)info->size, PAGE_NOACCESS);
+				//int res = ProcMemProtect(hp, (LPVOID)info->bid.base, size, PAGE_GUARD);
+				int res = ProcMemProtect(hp, info->buf, (SIZE_T)info->size, PAGE_NOACCESS);
 			}
 		}
 		else {

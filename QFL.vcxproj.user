@@ -9,11 +9,11 @@
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <LocalDebuggerCommandArguments>--df D:\vsProject\QFL\x64\release\target.exe</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>--df D:\vsProject\QFL\debug\target.exe</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <LocalDebuggerCommandArguments>--df D:\vsProject\QFL\x64\release\target.exe</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>--df D:\vsProject\QFL\debug\target.exe</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
 </Project>

@@ -131,8 +131,8 @@ int Debug::ProcessDataRange(HANDLE hp, int pid, LPVOID dataAddr, LPVOID codeAddr
 					}
 				}
 
-				unsigned char instructs[16] = { 0 };
-				ret = ReadProcessMemory(hp, codeAddr, instructs, 16, 0);
+				unsigned char instructs[64] = { 0 };
+				ret = ReadProcessMemory(hp, codeAddr, instructs, 64, 0);
 #ifdef _WIN64
 				hde64s asm64 = { 0 };
 				int instrLen = hde64_disasm(instructs, &asm64);
@@ -209,7 +209,6 @@ int Debug::DebugProcess(DEBUG_EVENT * debug) {
 			__log("STATUS_ILLEGAL_INSTRUCTION\r\n");
 		}
 		else if( code == EXCEPTION_BREAKPOINT ) {
-
 
 			unsigned char data[16] = { 0 };
 			ret = ReadProcessMemory(hp, addr, data, 1, 0);
